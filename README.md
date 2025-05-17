@@ -35,6 +35,69 @@ This project provisions a complete Kubernetes environment on AWS using Terraform
 - One for public subnets: routes traffic via IGW
 - One for private subnets: routes traffic via NAT Gateway
 
+---
+
+## 🔐 SSH Key-Based Access to Bastion Host
+
+### Why We Use It
+
+To securely access the Bastion Host (deployed in a public subnet), we use **pre-generated SSH key pairs** managed via AWS EC2. This avoids hardcoding sensitive credentials and ensures secure authentication.
+
+---
+
+### 🔧 How It Works
+
+1. **Create a Key Pair in AWS Console**:
+
+   - Go to: **EC2 → Network & Security → Key Pairs**
+   - Click **Create Key Pair**
+   - Name it: `my-bastionhost-key-01` (or match the name used in your Terraform code)
+   - Download the `.pem` file and save it securely (e.g., `~/.ssh/my-bastionhost-key-01.pem`)
+
+2. **Reference This Key in Terraform**:
+
+   In your `development/bastion.tf`, you reference this key by name:
+
+   ```hcl
+   module "bastion" {
+     source            = "../modules/bastion"
+     ami_id            = data.aws_ami.amazon_linux.id
+     instance_type     = "t3.micro"
+     subnet_id         = module.vpc.public_subnet_ids[0]
+     security_group_id = aws_security_group.bastion_sg.id
+     key_name          = "my-bastionhost-key-01"  # Pre-created in AWS
+     user_data         = file("${path.module}/get-my-ip.sh")
+
+     depends_on = [
+       aws_security_group.bastion_sg,
+       module.vpc
+     ]
+   }
+   ```
+
+3. **Connect to Bastion via SSH**:
+
+   Once deployed, SSH into the instance:
+
+   ```bash
+   ssh -i ~/.ssh/my-bastionhost-key-01.pem ec2-user@<bastion-public-ip>
+   ```
+
+   Ensure proper permissions:
+
+   ```bash
+   chmod 400 ~/.ssh/my-bastionhost-key-01.pem
+   ```
+
+   From the Bastion, you can run:
+
+   ```bash
+   aws eks update-kubeconfig --region us-east-1 --name myekscluster
+   kubectl get nodes
+   ```
+
+---
+
 #### 6. **Bastion Host**
 - EC2 instance in a public subnet
 - Accessed using SSH from your local machine
@@ -48,7 +111,7 @@ This project provisions a complete Kubernetes environment on AWS using Terraform
 
 #### 8. **EKS Cluster**
 - Control Plane is managed by AWS
-- Configured to allow public access only from your IP (Picksup Automatically)
+- Configured to allow public access only from your IP (Picks up Automatically)
 - Private endpoint for internal communications
 
 #### 9. **EKS Managed Node Group**
@@ -109,9 +172,10 @@ kubectl delete -f kubernetes-manifest/all-deployments/
 kubectl delete -f kubernetes-manifest/common-ingress/ingress.yaml
 kubectl delete namespace monitoring
 ```
+
 ---
 
-##  Useful Commands and Explanations
+## 🛠️ Useful Commands and Explanations
 
 Below is a set of essential commands used throughout this project, along with what each command does.
 
@@ -120,88 +184,57 @@ Below is a set of essential commands used throughout this project, along with wh
 ### 🔁 AWS EKS Access and Context Management
 
 ```bash
-# Update kubeconfig to access your EKS cluster from local system
 aws eks update-kubeconfig --region us-east-1 --name myekscluster
-
-# List all kubeconfig contexts on your machine
 kubectl config get-contexts
-
-# Switch to a specific EKS context by ARN
 kubectl config use-context arn:aws:eks:us-east-1:580420848811:cluster/myekscluster
-
-# Or switch using the friendly cluster name (after update-kubeconfig)
 kubectl config use-context myekscluster
-
-# Manually edit aws-auth ConfigMap to manage RBAC
 kubectl edit configmap aws-auth -n kube-system
 ```
 
 ---
 
-###  Ingress Controller Installation (NGINX)
-
-#### 1. Install Helm (if not already)
+### 🚀 Ingress Controller Installation (NGINX)
 
 ```bash
+# Install Helm
 curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-```
 
-#### 2. Add Ingress-NGINX Helm repo
-
-```bash
+# Add and update repo
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
-```
 
-#### 3. Install Ingress Controller
+# Install NGINX Ingress
+helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace
 
-```bash
-helm install ingress-nginx ingress-nginx/ingress-nginx   --namespace ingress-nginx --create-namespace
-```
-
-#### 4. Uninstall Ingress Controller
-
-```bash
+# Uninstall
 helm uninstall ingress-nginx -n ingress-nginx
 kubectl delete namespace ingress-nginx
 ```
 
 ---
 
-###  Monitoring Stack (Prometheus + Grafana)
-
-#### 1. Add Prometheus Helm repo
+### 📈 Monitoring Stack (Prometheus + Grafana)
 
 ```bash
+# Add Prometheus Helm repo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
-```
 
-#### 2. Install Prometheus stack
+# Install monitoring stack
+helm install monitoring prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
 
-```bash
-helm install monitoring prometheus-community/kube-prometheus-stack   --namespace monitoring --create-namespace
-```
-
-#### 3. Uninstall Prometheus stack
-
-```bash
+# Uninstall
 helm uninstall monitoring -n monitoring
 kubectl delete namespace monitoring
 ```
 
 ---
 
-### 🌐 Accessing Monitoring Dashboards
+### 🌐 Accessing Grafana Dashboard
 
 ```bash
-# Get the external URL for Grafana
+# Get LoadBalancer URL
 kubectl get svc -n monitoring
-
-# Sample output (look under EXTERNAL-IP)
-# monitoring-grafana LoadBalancer <EXTERNAL-IP> 80:xxxxx/TCP
-
-# Access Grafana via: http://<EXTERNAL-IP>
 
 # Get Grafana admin password
 kubectl get secret -n monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode && echo
