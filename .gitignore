@@ -1,0 +1,29 @@
+# Terraform files
+*.tfstate
+*.tfstate.backup
+.terraform/
+terraform.tfvars
+
+# SSH keys
+*.pem
+*.ppk
+
+# Shell history and output
+*.log
+*.out
+*.err
+
+# macOS system files
+.DS_Store
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+
+# Kubernetes config and cache
+.kube/
+.kube/config
+
+# Secrets (example)
+secrets.yaml
