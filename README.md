@@ -1,5 +1,5 @@
 
-# ☁️ AWS EKS Cluster with Bastion Access - Terraform Project
+## ☁️ AWS EKS Cluster with Bastion Access - Terraform Project
 
 This project provisions a complete Kubernetes environment on AWS using Terraform. It includes a secure VPC, a managed EKS cluster with public and private subnets, a Bastion Host for secure access, sample web applications, ingress routing, and monitoring with Prometheus and Grafana.
 
