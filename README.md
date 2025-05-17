@@ -109,3 +109,100 @@ kubectl delete -f kubernetes-manifest/all-deployments/
 kubectl delete -f kubernetes-manifest/common-ingress/ingress.yaml
 kubectl delete namespace monitoring
 ```
+---
+
+##  Useful Commands and Explanations
+
+Below is a set of essential commands used throughout this project, along with what each command does.
+
+---
+
+### 🔁 AWS EKS Access and Context Management
+
+```bash
+# Update kubeconfig to access your EKS cluster from local system
+aws eks update-kubeconfig --region us-east-1 --name myekscluster
+
+# List all kubeconfig contexts on your machine
+kubectl config get-contexts
+
+# Switch to a specific EKS context by ARN
+kubectl config use-context arn:aws:eks:us-east-1:580420848811:cluster/myekscluster
+
+# Or switch using the friendly cluster name (after update-kubeconfig)
+kubectl config use-context myekscluster
+
+# Manually edit aws-auth ConfigMap to manage RBAC
+kubectl edit configmap aws-auth -n kube-system
+```
+
+---
+
+###  Ingress Controller Installation (NGINX)
+
+#### 1. Install Helm (if not already)
+
+```bash
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+```
+
+#### 2. Add Ingress-NGINX Helm repo
+
+```bash
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+```
+
+#### 3. Install Ingress Controller
+
+```bash
+helm install ingress-nginx ingress-nginx/ingress-nginx   --namespace ingress-nginx --create-namespace
+```
+
+#### 4. Uninstall Ingress Controller
+
+```bash
+helm uninstall ingress-nginx -n ingress-nginx
+kubectl delete namespace ingress-nginx
+```
+
+---
+
+###  Monitoring Stack (Prometheus + Grafana)
+
+#### 1. Add Prometheus Helm repo
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+```
+
+#### 2. Install Prometheus stack
+
+```bash
+helm install monitoring prometheus-community/kube-prometheus-stack   --namespace monitoring --create-namespace
+```
+
+#### 3. Uninstall Prometheus stack
+
+```bash
+helm uninstall monitoring -n monitoring
+kubectl delete namespace monitoring
+```
+
+---
+
+### 🌐 Accessing Monitoring Dashboards
+
+```bash
+# Get the external URL for Grafana
+kubectl get svc -n monitoring
+
+# Sample output (look under EXTERNAL-IP)
+# monitoring-grafana LoadBalancer <EXTERNAL-IP> 80:xxxxx/TCP
+
+# Access Grafana via: http://<EXTERNAL-IP>
+
+# Get Grafana admin password
+kubectl get secret -n monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode && echo
+```
