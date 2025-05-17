@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1               # Specifies the API version for the Ingress resource.
+kind: Ingress                                  # Declares this resource as an Ingress.
+metadata:
+  name: ingress-nodejs-app                     # The name of the Ingress resource.
+  namespace: san-test-1                        # The namespace where this Ingress will be created.
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /   # Annotation used by NGINX to rewrite the URL path to `/`.
+    kubernetes.io/ingress.class: "nginx"            # Specifies that this Ingress should be handled by the NGINX ingress controller.
+
+spec:
+  rules:                                       # Defines rules to control how requests are routed.
+  - host: aacc5db8e991343a3bfac46877658398-458261854.us-east-1.elb.amazonaws.com
+    http:
+      paths:                                   # HTTP paths associated with the domain.
+      - pathType: Prefix                       # Path type indicating prefix match (any path starting with `/`).
+        path: /                                # The base path to match incoming requests.
+        backend:                               # Specifies the backend service that traffic should be forwarded to.
+          service:
+            name: my-service-load              # Name of the Kubernetes service to route traffic to.
+            port:
+              number: 80                       # Port on which the backend service is listening.

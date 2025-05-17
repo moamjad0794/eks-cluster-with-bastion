@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-amjad-apps
+  namespace: san-test-1
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: aacc5db8e991343a3bfac46877658398-458261854.us-east-1.elb.amazonaws.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: home-service
+                port:
+                  number: 80
+          - path: /food
+            pathType: Prefix
+            backend:
+              service:
+                name: food-service
+                port:
+                  number: 80
+          - path: /travel
+            pathType: Prefix
+            backend:
+              service:
+                name: travel-service
+                port:
+                  number: 80

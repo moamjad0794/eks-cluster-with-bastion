@@ -1,0 +1,16 @@
+# it is a part of deployment already no need to run it seperately
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service-load
+  namespace: san-test-1
+spec:
+  selector:
+    app: nodejs
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: ClusterIP
+  #type: LoadBalancer 

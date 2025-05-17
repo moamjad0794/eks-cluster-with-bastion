@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: travel-service
+  namespace: san-test-1
+spec:
+  selector:
+    app: travel-server
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: travel-server
+  namespace: san-test-1
+  labels:
+    app: travel-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: travel-server
+  template:
+    metadata:
+      labels:
+        app: travel-server
+    spec:
+      containers:
+        - name: travel-server
+          image: moamjad/travel-server:v1
+          ports:
+            - containerPort: 3000

@@ -1,0 +1,19 @@
+apiVersion: v1
+data:
+  mapRoles: |
+    - groups:
+        - system:bootstrappers
+        - system:nodes
+      rolearn: arn:aws:iam::580420848811:role/eksNodeGroupRole
+      username: system:node:{{EC2PrivateDNSName}}
+    - groups:
+        - system:masters
+      rolearn: arn:aws:iam::580420848811:role/bastionRole
+      username: bastion
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2025-05-17T03:55:28Z"
+  name: aws-auth
+  namespace: kube-system
+  resourceVersion: "2495"
+  uid: 728ca55a-2ba9-46e3-9a13-09c5a51f3465
